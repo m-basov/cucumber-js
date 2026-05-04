@@ -1,5 +1,5 @@
+import { styleText } from 'node:util'
 import { reindent } from 'reindent-template-literals'
-import chalk from 'chalk'
 
 export function warnUserAboutEnablingDeveloperMode(error: any): void {
   if (!(error?.code === 'EPERM')) {
@@ -11,7 +11,8 @@ export function warnUserAboutEnablingDeveloperMode(error: any): void {
 
   // eslint-disable-next-line no-console
   console.error(
-    chalk.red(
+    styleText(
+      'red',
       reindent(`
         Error: Unable to run feature tests!
 

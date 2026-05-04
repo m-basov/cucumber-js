@@ -1,5 +1,5 @@
 import { Writable } from 'node:stream'
-import chalk from 'chalk'
+import { styleText } from 'node:util'
 import { ColorInfo, supportsColor } from 'supports-color'
 import { TestStepResultStatus } from '@cucumber/messages'
 import { doesNotHaveValue } from '../value_checker'
@@ -16,6 +16,11 @@ export interface IColorFns {
   errorStack: IColorFn
 }
 
+type ITextStyle = Parameters<typeof styleText>[0]
+function createColorFn(style: ITextStyle): IColorFn {
+  return (text) => styleText(style, text)
+}
+
 export default function getColorFns(
   stream: Writable,
   env: NodeJS.ProcessEnv,
@@ -23,25 +28,24 @@ export default function getColorFns(
 ): IColorFns {
   const support: ColorInfo = detectSupport(stream, env, enabled)
   if (support) {
-    const chalkInstance = new chalk.Instance(support)
     return {
       forStatus(status: TestStepResultStatus) {
         return {
-          AMBIGUOUS: chalkInstance.red.bind(chalk),
-          FAILED: chalkInstance.red.bind(chalk),
-          PASSED: chalkInstance.green.bind(chalk),
-          PENDING: chalkInstance.yellow.bind(chalk),
-          SKIPPED: chalkInstance.cyan.bind(chalk),
-          UNDEFINED: chalkInstance.yellow.bind(chalk),
-          UNKNOWN: chalkInstance.yellow.bind(chalk),
+          AMBIGUOUS: createColorFn('red'),
+          FAILED: createColorFn('red'),
+          PASSED: createColorFn('green'),
+          PENDING: createColorFn('yellow'),
+          SKIPPED: createColorFn('cyan'),
+          UNDEFINED: createColorFn('yellow'),
+          UNKNOWN: createColorFn('yellow'),
         }[status]
       },
-      location: chalkInstance.gray.bind(chalk),
-      tag: chalkInstance.cyan.bind(chalk),
-      diffAdded: chalkInstance.green.bind(chalk),
-      diffRemoved: chalkInstance.red.bind(chalk),
-      errorMessage: chalkInstance.red.bind(chalk),
-      errorStack: chalkInstance.grey.bind(chalk),
+      location: createColorFn('gray'),
+      tag: createColorFn('cyan'),
+      diffAdded: createColorFn('green'),
+      diffRemoved: createColorFn('red'),
+      errorMessage: createColorFn('red'),
+      errorStack: createColorFn('grey'),
     }
   } else {
     return {
