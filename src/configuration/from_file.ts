@@ -171,8 +171,40 @@ async function loadFile(
   return definitions
 }
 
-async function readPackageJson(filePath: string) {
-  const { readPackageUp } = await import('read-package-up')
-  const parentPackage = await readPackageUp({ cwd: path.dirname(filePath) })
-  return parentPackage?.packageJson
+interface PackageJSON {
+  name: string
+  type: string | undefined
+}
+
+async function readPackageJson(
+  filePath: string
+): Promise<PackageJSON | undefined> {
+  // start point
+  let curr = path.dirname(filePath)
+  // end point
+  const { root } = path.parse(curr)
+
+  let pkgStr: string | undefined
+  while (curr) {
+    const pkgPath = path.join(curr, 'package.json')
+    try {
+      pkgStr = await fs.promises.readFile(pkgPath, 'utf8')
+      // we've found nearest package.json, exit the loop
+      break
+    } catch {
+      // keep going up the tree unless we are in root already
+      if (curr !== root) {
+        curr = path.join(curr, '..')
+      } else {
+        return undefined
+      }
+    }
+  }
+
+  const pkgJSON = JSON.parse(pkgStr)
+  // return minimal normalized properties
+  return {
+    name: pkgJSON.name?.trim() ?? '',
+    type: pkgJSON.type,
+  }
 }
